@@ -2,9 +2,31 @@ from tkinter import *
 from tkinter import messagebox
 from random import choice, randint, shuffle
 import pyperclip
+import json
+# ---------------------------- Search Pssword ------------------------------- #
+
+def search_pw():
+    # Search Website to get pw
+    website = website_entry.get()
+    try:
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No data File Found")
+    else:
+        if website in data:
+            email = data[website]["email"]
+            password = data[website]["password"]
+            messagebox.showinfo(title="website", message=f"Email : {email}\nPassword : {password}")
+        else:
+            messagebox.showinfo(title="Error", message=f"No Details for {website}exists")
+
+
+
 
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
+
 
 def generate_password():
     letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
@@ -42,18 +64,34 @@ def save_password():
     website = website_entry.get()
     email = email_entry.get()
     password_value = password_entry.get()
-    data = f"{website} / {email} / {password_value}\n"
+    new_data = {website: {
+        "email": email,
+        "password": password_value
+    }}
+    # data = f"{website} / {email} / {password_value}\n"
 
     if len(website) == 0 or len(password_value) == 0:
         messagebox.showinfo(title="Oops", message="Please don't leave any fields empty!")
     else:
-        is_ok = messagebox.askokcancel(title=website, message=f"These are the details entered : \nEmail : {email}\n"
-                                                              f"Password : Is it ok to save")
-        if is_ok:
-            with open("datat.txt", mode="a") as data_file:
-                data_file.write(data)
-                website_entry.delete(0, END)
-                password_entry.delete(0, END)
+        try:
+            with open("data.json", mode="r") as data_file:
+                # json.dump(추가될 객체, 객체가 추가될 개체, indent= 들여쓰기 인수)
+                # json.dump(new_data, data_file, indent=4)
+
+                # Reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            with open("data.json", "w") as data_File:
+                json.dump(new_data, data_File, indent=4)
+        else:
+            # Updating old data with new data
+            data.update(new_data)
+            with open("data.json", mode="w") as data_file:
+                # Saving updated data
+                json.dump(data, data_file, indent=4)
+        finally:
+            website_entry.delete(0, END)
+            password_entry.delete(0, END)
 
 
 # ---------------------------- UI SETUP ------------------------------- #
@@ -98,5 +136,9 @@ generate_password_button.grid(column=2, row=3)
 # ---------------------- Part Of Add Button------------------------------- #
 add_button = Button(text="Add", width=36, command=save_password)
 add_button.grid(column=1, row=4, columnspan=2)
+# ---------------------- Search Button------------------------------- #
+search_button = Button(text="Search", command=search_pw)
+search_button.grid(column=2, row=1)
+
 
 window.mainloop()
